@@ -9,7 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -23,13 +23,17 @@ class AppUpdater {
   }
 }
 
-let mainWindow: BrowserWindow | null = null;
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('electron-easygsm', process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('electron-easygsm');
+}
 
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
-});
+let mainWindow: BrowserWindow | null = null;
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -82,6 +86,43 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
+
+  //Open app from deep link for windows and linux
+  const gotTheLock = app.requestSingleInstanceLock();
+  if (!gotTheLock) {
+    app.quit();
+  } else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+      // Someone tried to run a second instance, we should focus our window.
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+      }
+      // the commandLine is array of strings in which last element is deep link url
+      dialog.showErrorBox(
+        'Welcome Back',
+        `You arrived from: ${commandLine.pop()}`,
+      );
+    });
+
+    // Create mainWindow, load the rest of the app, etc...
+    // app
+    //   .whenReady()
+    //   .then(() => {
+    //     createWindow();
+    //     app.on('activate', () => {
+    //       // On macOS it's common to re-create a window in the app when the
+    //       // dock icon is clicked and there are no other windows open.
+    //       if (mainWindow === null) createWindow();
+    //     });
+    //   })
+    //   .catch(console.log);
+  }
+
+  // Open app from deep link for mac
+  app.on('open-url', (event, url) => {
+    dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`);
+  });
 
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
