@@ -17,13 +17,6 @@ import { createFormattedDate } from './Date';
 import { setAuthUser } from './auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCWT0AhjMA3rRUxQxzcvH1V9wPEpJzuEAk",
-  authDomain: "easygsm-39656.firebaseapp.com",
-  projectId: "easygsm-39656",
-  storageBucket: "easygsm-39656.appspot.com",
-  messagingSenderId: "161853302891",
-  appId: "1:161853302891:web:0d0526f72ce08ba2d7292e",
-  measurementId: "G-D84HBKGY8V"
 };
 
 // Initialize Firebase
